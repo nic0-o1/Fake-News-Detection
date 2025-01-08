@@ -1,0 +1,128 @@
+import random
+
+import numpy as np
+import torch
+import torch.optim as optim
+
+from config import *
+from Training.UnifiedTrainer import UnifiedTrainer
+from Models.LSTMWithAttention import LSTMWithAttention
+from Models.LSTMWithoutAttention import LSTMWithoutAttention
+
+
+def set_seeds(seed=42):
+	torch.manual_seed(seed)
+	torch.cuda.manual_seed(seed)
+	np.random.seed(seed)
+	random.seed(seed)
+	torch.backends.cudnn.deterministic = True
+	
+def init_model_1():
+	return LSTMWithAttention(
+		embedding_dim=EMBEDDING_DIM,
+		hidden_dim=128,
+		output_dim=1,
+		dropout_rate=0.7
+	)
+
+def init_model_2():
+	return LSTMWithoutAttention(
+		embedding_dim=EMBEDDING_DIM,
+		hidden_dim=128,
+		output_dim=1,
+		dropout_rate=0.7
+	)
+
+def init_training_components(model, lr=0.0001, scheduler_factor = 0.2, scheduler_patience = 3): # changed from 0.001 to 0.0001
+	optimizer = optim.Adam(model.parameters(), lr=lr)
+	scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+		optimizer,
+		mode='min',
+		factor=scheduler_factor, #was 0.1
+		patience=scheduler_patience
+	)
+	return optimizer, scheduler
+
+def train_evaluate_and_test_models(train_loader, val_loader, test_loader, epochs=10):
+	# Set seeds for reproducibility
+	set_seeds()
+
+	# Initialize both models
+	model1 = init_model_1().to(DEVICE)
+	model2 = init_model_2().to(DEVICE)
+
+	# Dictionary to store results
+	results = {
+		'Model 1': {'trainer': None, 'training_metrics': None, 'test_metrics': None},
+		'Model 2': {'trainer': None, 'training_metrics': None, 'test_metrics': None}
+	}
+
+	# Train Model 1
+	print("\nTraining Model 1 (LSTM with Attention)")
+	optimizer1, scheduler1 = init_training_components(model1)
+	trainer1 = UnifiedTrainer(
+		model=model1,
+		optimizer=optimizer1,
+		scheduler=scheduler1,
+		device=DEVICE,
+		grad_clip=1.0,
+		early_stopping_patience=EARLY_STOP_PATIENCE,
+		save_name = 'LSTMWithAttention.pt'
+	)
+	training_metrics1 = trainer1.train(train_loader, val_loader, epochs)
+	test_metrics1 = trainer1.test(test_loader)
+
+	results['Model 1']['trainer'] = trainer1
+	results['Model 1']['training_metrics'] = training_metrics1
+	results['Model 1']['test_metrics'] = test_metrics1
+	# Reset seeds for consistent comparison
+	set_seeds()
+
+	# Train Model 2
+	print("\nTraining Model 2 (LSTM without Attention)")
+	optimizer2, scheduler2 = init_training_components(model2)
+	trainer2 = UnifiedTrainer(
+		model=model2,
+		optimizer=optimizer2,
+		scheduler=scheduler2,
+		device=DEVICE,
+		grad_clip=1.0,
+		early_stopping_patience=EARLY_STOP_PATIENCE,
+		save_name = 'LSTMWithoutAttention.pt'
+	)
+	training_metrics2 = trainer2.test(train_loader, val_loader, epochs)
+	test_metrics2 = trainer2.test(test_loader)
+	
+	results['Model 2']['trainer'] = trainer2
+	results['Model 2']['training_metrics'] = training_metrics2
+	results['Model 2']['test_metrics'] = test_metrics2
+
+	return results
+
+def compare_models(results):
+	print("\nModel Comparison:")
+	print("-" * 50)
+
+	# Compare training/validation metrics
+	print("\nTraining/Validation Metrics:")
+	metrics_to_compare = ['accuracy', 'precision', 'recall', 'f1_score']
+	for metric in metrics_to_compare:
+		print(f"\n{metric.upper()}:")
+		for model_name in results:
+			val_scores = results[model_name]['training_metrics'][metric]['val']
+			final_score = val_scores[-1]
+			best_score = max(val_scores)
+
+			print(f"{model_name}:")
+			print(f"  Final: {final_score:.4f}")
+			print(f"  Best:  {best_score:.4f}")
+			print(f"  Mean:  {np.mean(val_scores):.4f}")
+			print(f"  Std:   {np.std(val_scores):.4f}")
+	
+	# Compare test metrics
+	print("\nTest Metrics:")
+	for metric in metrics_to_compare:
+		print(f"\n{metric.upper()}:")
+		for model_name in results:
+			test_score = results[model_name]['test_metrics'][metric]
+			print(f"{model_name}: {test_score:.4f}")
