@@ -1,40 +1,28 @@
-from sklearn.metrics import (
-	accuracy_score,
-	precision_score,
-	recall_score,
-	f1_score,
-	confusion_matrix,
-	roc_auc_score,
-	roc_curve,
-	precision_recall_curve
-)
 import numpy as np
+from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
+                             precision_recall_curve, precision_score,
+                             recall_score, roc_auc_score, roc_curve)
 
 
 class ModelMetrics:
 	"""A class for calculating and maintaining model evaluation metrics."""
-	
-	# Default structure for metrics tracking
-	DEFAULT_METRICS = {
-		'loss': {'train': [], 'val': []},
-		'accuracy': {'train': [], 'val': []},
-		'precision': {'train': [], 'val': []},
-		'recall': {'train': [], 'val': []},
-		'f1_score': {'train': [], 'val': []},
-		'auc_roc': {'train': [], 'val': []},
-		'confusion_matrix': {'train': [], 'val': []},
-		'precision_recall_curve': {'train': [], 'val': []},
-		'roc_curve': {'train': [], 'val': []}
-	}
-
 	def __init__(self):
 		"""
 		Initialize the metrics class with a default metrics history structure.
 		"""
-		self.metrics_history = self.DEFAULT_METRICS.copy()
+		self.metrics_history = {
+            'loss': {'train': [], 'val': []},
+            'accuracy': {'train': [], 'val': []},
+            'precision': {'train': [], 'val': []},
+            'recall': {'train': [], 'val': []},
+            'f1_score': {'train': [], 'val': []},
+            'auc_roc': {'train': [], 'val': []},
+            'confusion_matrix': {'train': [], 'val': []},
+            'precision_recall_curve': {'train': [], 'val': []},
+            'roc_curve': {'train': [], 'val': []}
+        }
 
-	@staticmethod
-	def calculate_metrics(labels, preds, proba_preds=None):
+	def calculate_metrics(self,labels, preds, proba_preds=None):
 		"""
 		Calculate evaluation metrics for a given set of predictions and labels.
 

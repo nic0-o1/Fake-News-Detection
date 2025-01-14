@@ -30,11 +30,11 @@ def init_model_2():
 		embedding_dim=EMBEDDING_DIM,
 		hidden_dim=128,
 		output_dim=1,
-		dropout_rate=0.7
+		dropout_rate=0.7 # changed from 0.7 to 0.4
 	)
 
-def init_training_components(model, lr=0.0001, scheduler_factor = 0.2, scheduler_patience = 3): # changed from 0.001 to 0.0001
-	optimizer = optim.Adam(model.parameters(), lr=lr)
+def init_training_components(model, lr=0.00005, scheduler_factor = 0.25, scheduler_patience = 3):
+	optimizer = optim.AdamW(model.parameters(), lr=lr)
 	scheduler = optim.lr_scheduler.ReduceLROnPlateau(
 		optimizer,
 		mode='min',
@@ -43,13 +43,15 @@ def init_training_components(model, lr=0.0001, scheduler_factor = 0.2, scheduler
 	)
 	return optimizer, scheduler
 
-def train_evaluate_and_test_models(train_loader, val_loader, test_loader, epochs=10):
+def train_evaluate_and_test_models(class_counts, train_loader, val_loader, test_loader, epochs=10):
+	
 	# Set seeds for reproducibility
 	set_seeds()
 
 	# Initialize both models
 	model1 = init_model_1().to(DEVICE)
 	model2 = init_model_2().to(DEVICE)
+
 
 	# Dictionary to store results
 	results = {
@@ -63,11 +65,12 @@ def train_evaluate_and_test_models(train_loader, val_loader, test_loader, epochs
 	trainer1 = UnifiedTrainer(
 		model=model1,
 		optimizer=optimizer1,
+		class_counts=class_counts,
 		scheduler=scheduler1,
 		device=DEVICE,
 		grad_clip=1.0,
 		early_stopping_patience=EARLY_STOP_PATIENCE,
-		save_name = 'LSTMWithAttention.pt'
+		save_name = 'LSTMWithAttention'
 	)
 	training_metrics1 = trainer1.train(train_loader, val_loader, epochs)
 	test_metrics1 = trainer1.test(test_loader)
@@ -78,19 +81,22 @@ def train_evaluate_and_test_models(train_loader, val_loader, test_loader, epochs
 	# Reset seeds for consistent comparison
 	set_seeds()
 
-	# Train Model 2
+	#Train Model 2
 	print("\nTraining Model 2 (LSTM without Attention)")
-	optimizer2, scheduler2 = init_training_components(model2)
+
+	optimizer2, scheduler2 = init_training_components(model = model2, lr=0.0001, scheduler_factor = 0.5)
 	trainer2 = UnifiedTrainer(
 		model=model2,
 		optimizer=optimizer2,
+		class_counts=class_counts,
 		scheduler=scheduler2,
 		device=DEVICE,
-		grad_clip=1.0,
+		grad_clip=0.3, # changed from 1.0 to 0.5
 		early_stopping_patience=EARLY_STOP_PATIENCE,
-		save_name = 'LSTMWithoutAttention.pt'
+		save_name = 'LSTMWithoutAttention'
 	)
-	training_metrics2 = trainer2.test(train_loader, val_loader, epochs)
+	
+	training_metrics2 = trainer2.train(train_loader, val_loader, epochs)
 	test_metrics2 = trainer2.test(test_loader)
 	
 	results['Model 2']['trainer'] = trainer2

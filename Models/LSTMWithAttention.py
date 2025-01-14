@@ -9,6 +9,7 @@ class LSTMWithAttention(BaseModule):
 
     def forward(self, x):
         lstm_out, _ = self.lstm(x)
+        
         lstm_out = lstm_out.permute(0, 2, 1)
         lstm_out = self.batch_norm(lstm_out).permute(0, 2, 1)
         lstm_out = self.dropout(lstm_out)
