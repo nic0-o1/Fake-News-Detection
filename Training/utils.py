@@ -91,7 +91,7 @@ def train_evaluate_and_test_models(class_counts, train_loader, val_loader, test_
 		class_counts=class_counts,
 		scheduler=scheduler2,
 		device=DEVICE,
-		grad_clip=0.3, # changed from 1.0 to 0.5
+		grad_clip=1.0, # changed from 1.0 to 0.5
 		early_stopping_patience=EARLY_STOP_PATIENCE,
 		save_name = 'LSTMWithoutAttention'
 	)

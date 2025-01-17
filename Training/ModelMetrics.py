@@ -3,7 +3,6 @@ from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
                              precision_recall_curve, precision_score,
                              recall_score, roc_auc_score, roc_curve)
 
-
 class ModelMetrics:
 	"""A class for calculating and maintaining model evaluation metrics."""
 	def __init__(self):
@@ -42,7 +41,6 @@ class ModelMetrics:
 			'confusion_matrix': confusion_matrix(labels, preds)
 		}
 
-		# For AUC-ROC and curves, proba_preds is required
 		if proba_preds is not None:
 			metrics['auc_roc'] = roc_auc_score(labels, proba_preds)
 			metrics['roc_curve'] = roc_curve(labels, proba_preds)
@@ -94,30 +92,25 @@ class ModelMetrics:
 		print(f" Val Loss: {val_loss:.4f}")
 		print(f" Val Accuracy: {val_metrics.get('accuracy', 0):.4f}")
 		print(f" Val F1 Score: {val_metrics.get('f1_score', 0):.4f}")
+		print(f" Precision: {val_metrics.get('precision'):.4f}")
+		print(f" Recall: {val_metrics.get('recall'):.4f}")
 		if 'auc_roc' in val_metrics:
 			print(f" Val AUC-ROC: {val_metrics['auc_roc']:.4f}")
 		print()
-
-	def get_metrics_summary(self):
+		
+	def print_test_results(self, test_loss, test_metrics):
 		"""
-		Summarise the metrics history.
+		Print the test results after evaluation.
 
-		Returns:
-			dict: A summary of final, best, mean, and standard deviation of metrics.
+		Args:
+			test_loss (float): Test loss.
+			test_metrics (dict): Test metrics (accuracy, f1_score, etc.).
 		"""
-		summary = {}
-		for metric, values in self.metrics_history.items():
-			if metric == 'loss':  # Handle loss separately
-				summary[metric] = {
-					'final_train': values['train'][-1] if values['train'] else None,
-					'final_val': values['val'][-1] if values['val'] else None
-				}
-			else:  # Handle other metrics
-				summary[metric] = {
-					'final_train': values['train'][-1] if values['train'] else None,
-					'final_val': values['val'][-1] if values['val'] else None,
-					'best_val': max(values['val']) if values['val'] else None,
-					'mean_val': np.mean(values['val']) if values['val'] else None,
-					'std_val': np.std(values['val']) if values['val'] else None
-				}
-		return summary
+		print("\nTest Results:")
+		print(f"Loss: {test_loss:.4f}")
+		print(f"Accuracy: {test_metrics['accuracy']:.4f}")
+		print(f"F1 Score: {test_metrics['f1_score']:.4f}")
+		print(f"Precision: {test_metrics['precision']:.4f}")
+		print(f"Recall: {test_metrics['recall']:.4f}")
+		print(f"ROC AUC: {test_metrics['auc_roc']:.4f}")
+		print()

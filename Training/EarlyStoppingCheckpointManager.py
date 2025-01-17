@@ -75,7 +75,7 @@ class EarlyStoppingCheckpointManager:
 		else:
 			self.counter += 1
 			if self.verbose:
-				print(f"Performance did not improve. Counter: {self.counter}/{self.patience}")
+				print(f"Performance did not improve: Current metric: {current_metric:.4f}, best metric: {self.best_metric:.4f} Counter: {self.counter}/{self.patience}")
 			if self.counter >= self.patience:
 				self.early_stop = True
 				print(f"Stopping early. Best performance: {self.best_metric:.4f}")

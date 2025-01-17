@@ -149,22 +149,7 @@ class UnifiedTrainer:
 			scheduler=self.scheduler
 		)
 		test_loss, test_metrics = self.evaluate(test_loader)
-		print("\nTest Results:")
-		print(f"Loss: {test_loss:.4f}")  
-		print(f"Accuracy: {test_metrics['accuracy']:.4f}")
-		print(f"F1 Score: {test_metrics['f1_score']:.4f}")
-		print(f"Precision: {test_metrics['precision']:.4f}")
-		print(f"Recall: {test_metrics['recall']:.4f}")
-		print(f"ROC AUC: {test_metrics['auc_roc']:.4f}")
+
+		self.model_metrics.print_test_results(test_loss, test_metrics)
 		test_metrics['loss'] = test_loss
 		return test_metrics
-
-	def print_epoch_metrics(self, epoch, epochs, train_loss, val_loss, val_metrics):
-		print(f"Epoch {epoch + 1}/{epochs}")
-		print(f" Train Loss: {train_loss:.4f}")
-		print(f" Val Loss: {val_loss:.4f}")
-		print(f" Val Accuracy: {val_metrics.get('accuracy', 0):.4f}")
-		print(f" Val F1 Score: {val_metrics.get('f1_score', 0):.4f}")
-		if 'auc_roc' in val_metrics:
-			print(f" Val AUC-ROC: {val_metrics['auc_roc']:.4f}")
-		print()
