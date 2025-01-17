@@ -1,5 +1,8 @@
 import random
 
+import json
+
+import string
 import numpy as np
 import torch
 import torch.optim as optim
@@ -9,6 +12,8 @@ from Training.UnifiedTrainer import UnifiedTrainer
 from Models.LSTMWithAttention import LSTMWithAttention
 from Models.LSTMWithoutAttention import LSTMWithoutAttention
 
+from Training.ModelMetricsVisualizer import ModelMetricsVisualizer
+import matplotlib.pyplot as plt
 
 def set_seeds(seed=42):
 	torch.manual_seed(seed)
@@ -16,8 +21,35 @@ def set_seeds(seed=42):
 	np.random.seed(seed)
 	random.seed(seed)
 	torch.backends.cudnn.deterministic = True
+
+def visualize_results(results):
+	"""
+	Create and save publication-ready visualizations.
 	
-def init_model_1():
+	Args:
+		results: Dictionary containing results for both models
+	"""
+	visualizer = ModelMetricsVisualizer()
+	
+	metrics = ['accuracy', 'precision', 'recall', 'f1_score']
+	for metric in metrics:
+		visualizer.plot_metric(results, metric, f'{metric}_comparison')
+	
+	visualizer.plot_confusion_matrix(results, 'confusion_matrix_comparison')
+	
+	plt.show()
+
+table = str.maketrans('', '', string.punctuation)
+
+def makeWords(sentences):
+  wordList = []
+  for headline in sentences:
+    words = headline.split(' ')
+    stripped = [w.strip().translate(table) for w in words]
+    wordList.append(stripped)
+  return wordList
+	
+def init_LSTM_with_attention():
 	return LSTMWithAttention(
 		embedding_dim=EMBEDDING_DIM,
 		hidden_dim=128,
@@ -25,7 +57,7 @@ def init_model_1():
 		dropout_rate=0.7
 	)
 
-def init_model_2():
+def init_LSTM_without_attention():
 	return LSTMWithoutAttention(
 		embedding_dim=EMBEDDING_DIM,
 		hidden_dim=128,
@@ -49,8 +81,8 @@ def train_evaluate_and_test_models(class_counts, train_loader, val_loader, test_
 	set_seeds()
 
 	# Initialize both models
-	model1 = init_model_1().to(DEVICE)
-	model2 = init_model_2().to(DEVICE)
+	model1 = init_LSTM_with_attention().to(DEVICE)
+	model2 = init_LSTM_without_attention().to(DEVICE)
 
 
 	# Dictionary to store results
@@ -103,8 +135,17 @@ def train_evaluate_and_test_models(class_counts, train_loader, val_loader, test_
 	results['Model 2']['training_metrics'] = training_metrics2
 	results['Model 2']['test_metrics'] = test_metrics2
 
-	return results
+	save_results(results)
 
+	return results
+def save_results(results):
+	with open('Results/results.json', 'w') as f:
+		json.dump(results, f, indent=4)
+
+def load_results():
+	with open('Results/results.json', 'r') as f:
+		results = json.load(f)
+	return results
 def compare_models(results):
 	print("\nModel Comparison:")
 	print("-" * 50)
@@ -132,3 +173,4 @@ def compare_models(results):
 		for model_name in results:
 			test_score = results[model_name]['test_metrics'][metric]
 			print(f"{model_name}: {test_score:.4f}")
+
