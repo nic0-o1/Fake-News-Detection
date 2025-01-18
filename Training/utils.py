@@ -179,8 +179,12 @@ def save_results(results: dict, filepath: str = 'checkpoints/results.json') -> N
 	def convert_to_serializable(obj):
 		if isinstance(obj, np.ndarray):
 			return obj.tolist()
-		if isinstance(obj, (dict, list, tuple)):
-			return type(obj)(convert_to_serializable(item) for item in obj)
+		elif isinstance(obj, dict):
+			return {key: convert_to_serializable(value) for key, value in obj.items()}
+		elif isinstance(obj, list):
+			return [convert_to_serializable(item) for item in obj]
+		elif isinstance(obj, tuple):
+			return tuple(convert_to_serializable(item) for item in obj)
 		return obj
 
 	results_to_save = {
