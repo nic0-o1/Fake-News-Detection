@@ -25,7 +25,7 @@ def set_seeds(seed: int = 42) -> None:
 	random.seed(seed)
 	torch.backends.cudnn.deterministic = True
 
-def visualize_results(results: dict) -> None:
+def visualize_results(metrics: list, results: dict) -> None:
 	"""
 	Create and display visualizations for model metrics.
 
@@ -33,7 +33,7 @@ def visualize_results(results: dict) -> None:
 		results (dict): Dictionary containing results for models.
 	"""
 	visualizer = ModelMetricsVisualizer()
-	metrics = ['accuracy', 'precision', 'recall', 'f1_score']
+	
 
 	for metric in metrics:
 		visualizer.plot_metric(results, metric, f'{metric}_comparison')

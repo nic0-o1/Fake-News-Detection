@@ -80,12 +80,18 @@ class ModelMetricsVisualizer:
 		ax.set_xlim(0, len(epochs) + 1)
 		
 		ax.grid(True, linestyle=':', alpha=0.3)
-		
-		ax.legend(loc='center right',
-				 bbox_to_anchor=(0.98, 0.5),
-				 frameon=True,
-				 fancybox=True,
-				 framealpha=0.9)
+		if metric == 'loss':
+			ax.legend(loc='upper right',
+					 bbox_to_anchor=(0.98, 0.98),
+					 frameon=True,
+					 fancybox=True,
+					 framealpha=0.9)
+		else:
+			ax.legend(loc='center right',
+					bbox_to_anchor=(0.98, 0.5),
+					frameon=True,
+					fancybox=True,
+					framealpha=0.9)
 		
 		plt.title(f'{metric.replace("_", " ").title()} Comparison')
 		plt.tight_layout(pad=1.5)
