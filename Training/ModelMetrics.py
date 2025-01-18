@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
                              precision_recall_curve, precision_score,
-                             recall_score, roc_auc_score, roc_curve)
+                             recall_score, roc_auc_score, roc_curve,average_precision_score,classification_report)
 
 class ModelMetrics:
 	"""A class for calculating and maintaining model evaluation metrics."""
@@ -45,6 +45,9 @@ class ModelMetrics:
 			metrics['auc_roc'] = roc_auc_score(labels, proba_preds)
 			metrics['roc_curve'] = roc_curve(labels, proba_preds)
 			metrics['precision_recall_curve'] = precision_recall_curve(labels, proba_preds)
+			metrics['average_precision'] = average_precision_score(labels, proba_preds)
+		
+		metrics['classification_report'] = classification_report(labels, preds, output_dict=True)
 
 		return metrics
 

@@ -72,6 +72,7 @@ class ModelMetricsVisualizer:
 					  color=self.colors[model_name],
 					  label=f'{model_name} (Test)',
 					  linewidth=1, alpha=0.7)
+
 		
 		ax.set_xlabel('Epoch')
 		ax.set_ylabel(metric.replace('_', ' ').title())
@@ -90,7 +91,7 @@ class ModelMetricsVisualizer:
 		plt.tight_layout(pad=1.5)
 		
 		if save_path:
-			plt.savefig(self.save_dir / f'{metric}_{save_path}.png',
+			plt.savefig(self.save_dir / f'{save_path}.png',
 					   bbox_inches='tight',
 					   dpi=300)
 			
@@ -139,3 +140,77 @@ class ModelMetricsVisualizer:
 			figures.append(fig)
 		
 		return figures
+	def plot_auc_roc_curve(self,results: Dict, save_path: Optional[str] = None) -> plt.Figure:
+		"""
+		Create a publication-ready ROC curve comparison.
+		
+		Args:
+			results: Dictionary containing results for both models
+			save_path: Optional path to save the plot
+		"""
+		fig, ax = plt.subplots(figsize=(6, 5))
+		
+		for model_name in ['Model 1', 'Model 2']:
+
+			fpr, tpr, _ = results[model_name]['test_metrics']['roc_curve']
+			roc = results[model_name]['test_metrics']["auc_roc"]
+			
+			ax.plot(fpr, tpr, label=f'{model_name} (AUC = {roc:.3f})',
+					color=self.colors[model_name],
+					linewidth=1.5)
+		
+		ax.plot([0, 1], [0, 1], color='gray', linestyle='--', linewidth=1)
+		
+		ax.set_xlabel('False Positive Rate')
+		ax.set_ylabel('True Positive Rate')
+		ax.set_xlim(0, 1)
+		ax.set_ylim(0, 1)
+		
+		ax.grid(True, linestyle=':', alpha=0.3)
+		ax.legend(loc='lower right', frameon=True, fancybox=True, framealpha=0.9)
+		
+		plt.title('ROC Curve Comparison')
+		plt.tight_layout(pad=1.5)
+		
+		if save_path:
+			plt.savefig(f"{self.save_dir /save_path}.png",
+						bbox_inches='tight',
+						dpi=300)
+		return fig
+	
+	def plot_precision_recall_curve(self, results: Dict, save_path: Optional[str] = None) -> plt.Figure:
+		"""
+		Create a publication-ready Precision-Recall curve comparison.
+		
+		Args:
+			results: Dictionary containing results for both models
+			save_path: Optional path to save the plot
+		"""
+		fig, ax = plt.subplots(figsize=(6, 5))
+		
+		for model_name in ['Model 1', 'Model 2']:
+			precision, recall, _ = results[model_name]['test_metrics']['precision_recall_curve']
+			auc_pr = results[model_name]['test_metrics']['average_precision']
+			
+			ax.plot(recall, precision, label=f'{model_name} (AUC = {auc_pr:.3f})',
+					color=self.colors[model_name],
+					linewidth=1.5)
+		
+		ax.set_xlabel('Recall')
+		ax.set_ylabel('Precision')
+		ax.set_xlim(0, 1)
+		ax.set_ylim(0, 1)
+		
+		ax.grid(True, linestyle=':', alpha=0.3)
+		ax.legend(loc='lower left', frameon=True, fancybox=True, framealpha=0.9)
+		
+		plt.title('Precision-Recall Curve Comparison')
+		plt.tight_layout(pad=1.5)
+		
+		if save_path:
+			plt.savefig(f"{self.save_dir /save_path}.png",
+						bbox_inches='tight',
+						dpi=300)
+
+
+		return fig

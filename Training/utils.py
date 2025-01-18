@@ -39,6 +39,11 @@ def visualize_results(results: dict) -> None:
 		visualizer.plot_metric(results, metric, f'{metric}_comparison')
 
 	visualizer.plot_confusion_matrix(results, 'confusion_matrix_comparison')
+
+	visualizer.plot_auc_roc_curve(results, 'auc_roc_curve_comparison')
+
+	visualizer.plot_precision_recall_curve(results, 'precision_recall_curve_comparison')
+	
 	plt.show()
 
 def make_words(sentences: list[str]) -> list[list[str]]:
