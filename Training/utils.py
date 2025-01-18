@@ -1,55 +1,60 @@
 import random
-
 import json
-
 import string
 import numpy as np
 import torch
 import torch.optim as optim
+import matplotlib.pyplot as plt
 
 from config import *
 from Training.UnifiedTrainer import UnifiedTrainer
 from Models.LSTMWithAttention import LSTMWithAttention
 from Models.LSTMWithoutAttention import LSTMWithoutAttention
-
 from Training.ModelMetricsVisualizer import ModelMetricsVisualizer
-import matplotlib.pyplot as plt
 
-def set_seeds(seed=42):
+# Set up a translation table to remove punctuation from strings.
+TABLE = str.maketrans('', '', string.punctuation)
+
+def set_seeds(seed: int = 42) -> None:
+	"""
+	Set seeds for reproducibility across numpy, random, and torch.
+	"""
 	torch.manual_seed(seed)
 	torch.cuda.manual_seed(seed)
 	np.random.seed(seed)
 	random.seed(seed)
 	torch.backends.cudnn.deterministic = True
 
-def visualize_results(results):
+def visualize_results(results: dict) -> None:
 	"""
-	Create and save publication-ready visualizations.
-	
+	Create and display visualizations for model metrics.
+
 	Args:
-		results: Dictionary containing results for both models
+		results (dict): Dictionary containing results for models.
 	"""
 	visualizer = ModelMetricsVisualizer()
-	
 	metrics = ['accuracy', 'precision', 'recall', 'f1_score']
+
 	for metric in metrics:
 		visualizer.plot_metric(results, metric, f'{metric}_comparison')
-	
+
 	visualizer.plot_confusion_matrix(results, 'confusion_matrix_comparison')
-	
 	plt.show()
 
-table = str.maketrans('', '', string.punctuation)
+def make_words(sentences: list[str]) -> list[list[str]]:
+	"""
+	Tokenize sentences into words and remove punctuation.
 
-def makeWords(sentences):
-  wordList = []
-  for headline in sentences:
-    words = headline.split(' ')
-    stripped = [w.strip().translate(table) for w in words]
-    wordList.append(stripped)
-  return wordList
-	
-def init_LSTM_with_attention():
+	Args:
+		sentences (list of str): List of sentences.
+
+	Returns:
+		list of list of str: Tokenized and cleaned words.
+	"""
+	return [[word.strip().translate(TABLE) for word in sentence.split(' ')] for sentence in sentences]
+
+def init_lstm_with_attention() -> LSTMWithAttention:
+	"""Initialize the LSTM model with attention."""
 	return LSTMWithAttention(
 		embedding_dim=EMBEDDING_DIM,
 		hidden_dim=128,
@@ -57,35 +62,69 @@ def init_LSTM_with_attention():
 		dropout_rate=0.7
 	)
 
-def init_LSTM_without_attention():
+def init_lstm_without_attention() -> LSTMWithoutAttention:
+	"""Initialize the LSTM model without attention."""
 	return LSTMWithoutAttention(
 		embedding_dim=EMBEDDING_DIM,
 		hidden_dim=128,
 		output_dim=1,
-		dropout_rate=0.7 # changed from 0.7 to 0.4
+		dropout_rate=0.4
 	)
 
-def init_training_components(model, lr=0.00005, scheduler_factor = 0.25, scheduler_patience = 3):
+def init_training_components(
+	model: torch.nn.Module, 
+	lr: float = 0.00005, 
+	scheduler_factor: float = 0.25, 
+	scheduler_patience: int = 3
+) -> tuple[torch.optim.Optimizer, torch.optim.lr_scheduler._LRScheduler]:
+	"""
+	Initialize optimizer and learning rate scheduler.
+
+	Args:
+		model (torch.nn.Module): The model to optimize.
+		lr (float): Learning rate.
+		scheduler_factor (float): Factor by which the learning rate is reduced.
+		scheduler_patience (int): Number of epochs with no improvement before reducing the learning rate.
+
+	Returns:
+		tuple: Optimizer and scheduler.
+	"""
 	optimizer = optim.AdamW(model.parameters(), lr=lr)
 	scheduler = optim.lr_scheduler.ReduceLROnPlateau(
 		optimizer,
 		mode='min',
-		factor=scheduler_factor, #was 0.1
+		factor=scheduler_factor,
 		patience=scheduler_patience
 	)
 	return optimizer, scheduler
 
-def train_evaluate_and_test_models(class_counts, train_loader, val_loader, test_loader, epochs=10):
-	
-	# Set seeds for reproducibility
+def train_evaluate_and_test_models(
+	class_counts: dict, 
+	train_loader: torch.utils.data.DataLoader, 
+	val_loader: torch.utils.data.DataLoader, 
+	test_loader: torch.utils.data.DataLoader, 
+	epochs: int = 10
+) -> dict:
+	"""
+	Train, evaluate, and test two LSTM models (with and without attention).
+
+	Args:
+		class_counts (dict): Class distribution for weighted loss.
+		train_loader (DataLoader): Training data loader.
+		val_loader (DataLoader): Validation data loader.
+		test_loader (DataLoader): Test data loader.
+		epochs (int): Number of training epochs.
+
+	Returns:
+		dict: Results containing metrics for both models.
+	"""
 	set_seeds()
 
-	# Initialize both models
-	model1 = init_LSTM_with_attention().to(DEVICE)
-	model2 = init_LSTM_without_attention().to(DEVICE)
+	# Initialize models
+	model1 = init_lstm_with_attention().to(DEVICE)
+	model2 = init_lstm_without_attention().to(DEVICE)
 
-
-	# Dictionary to store results
+	# Store results
 	results = {
 		'Model 1': {'trainer': None, 'training_metrics': None, 'test_metrics': None},
 		'Model 2': {'trainer': None, 'training_metrics': None, 'test_metrics': None}
@@ -102,75 +141,101 @@ def train_evaluate_and_test_models(class_counts, train_loader, val_loader, test_
 		device=DEVICE,
 		grad_clip=1.0,
 		early_stopping_patience=EARLY_STOP_PATIENCE,
-		save_name = 'LSTMWithAttention'
+		save_name='LSTMWithAttention'
 	)
-	training_metrics1 = trainer1.train(train_loader, val_loader, epochs)
-	test_metrics1 = trainer1.test(test_loader)
+	results['Model 1']['training_metrics'] = trainer1.train(train_loader, val_loader, epochs)
+	results['Model 1']['test_metrics'] = trainer1.test(test_loader)
 
-	results['Model 1']['trainer'] = trainer1
-	results['Model 1']['training_metrics'] = training_metrics1
-	results['Model 1']['test_metrics'] = test_metrics1
-	# Reset seeds for consistent comparison
-	set_seeds()
+	set_seeds()  # Reset seeds for consistency
 
-	#Train Model 2
+	# Train Model 2
 	print("\nTraining Model 2 (LSTM without Attention)")
-
-	optimizer2, scheduler2 = init_training_components(model = model2, lr=0.0001, scheduler_factor = 0.5)
+	optimizer2, scheduler2 = init_training_components(model2, lr=0.0001, scheduler_factor=0.5)
 	trainer2 = UnifiedTrainer(
 		model=model2,
 		optimizer=optimizer2,
 		class_counts=class_counts,
 		scheduler=scheduler2,
 		device=DEVICE,
-		grad_clip=1.0, # changed from 1.0 to 0.5
+		grad_clip=0.5,
 		early_stopping_patience=EARLY_STOP_PATIENCE,
-		save_name = 'LSTMWithoutAttention'
+		save_name='LSTMWithoutAttention'
 	)
-	
-	training_metrics2 = trainer2.train(train_loader, val_loader, epochs)
-	test_metrics2 = trainer2.test(test_loader)
-	
-	results['Model 2']['trainer'] = trainer2
-	results['Model 2']['training_metrics'] = training_metrics2
-	results['Model 2']['test_metrics'] = test_metrics2
+	results['Model 2']['training_metrics'] = trainer2.train(train_loader, val_loader, epochs)
+	results['Model 2']['test_metrics'] = trainer2.test(test_loader)
 
 	save_results(results)
-
+	print('Model training and testing complete.')
 	return results
-def save_results(results):
-	with open('Results/results.json', 'w') as f:
-		json.dump(results, f, indent=4)
 
-def load_results():
-	with open('Results/results.json', 'r') as f:
-		results = json.load(f)
-	return results
-def compare_models(results):
+def save_results(results: dict, filepath: str = 'checkpoints/results.json') -> None:
+	"""
+	Save training and testing results to a JSON file.
+
+	Args:
+		results (dict): Results to save.
+		filepath (str): Filepath for saving the results.
+	"""
+	def convert_to_serializable(obj):
+		if isinstance(obj, np.ndarray):
+			return obj.tolist()
+		if isinstance(obj, (dict, list, tuple)):
+			return type(obj)(convert_to_serializable(item) for item in obj)
+		return obj
+
+	results_to_save = {
+		model_name: {
+			key: convert_to_serializable(value)
+			for key, value in metrics.items() if key != 'trainer'
+		}
+		for model_name, metrics in results.items()
+	}
+
+	with open(filepath, 'w') as f:
+		json.dump(results_to_save, f, indent=4)
+
+def load_results(filepath: str = 'Results/results.json') -> dict | None:
+	"""
+	Load results from a JSON file.
+
+	Args:
+		filepath (str): Filepath to load results from.
+
+	Returns:
+		dict or None: Loaded results, or None if file is not found.
+	"""
+	try:
+		with open(filepath, 'r') as f:
+			return json.load(f)
+	except FileNotFoundError:
+		print(f"No results file found at {filepath}")
+		return None
+
+def compare_models(results: dict) -> None:
+	"""
+	Compare models based on training, validation, and test metrics.
+
+	Args:
+		results (dict): Results containing metrics for models.
+	"""
 	print("\nModel Comparison:")
 	print("-" * 50)
 
-	# Compare training/validation metrics
-	print("\nTraining/Validation Metrics:")
 	metrics_to_compare = ['accuracy', 'precision', 'recall', 'f1_score']
+
+	print("\nTraining/Validation Metrics:")
 	for metric in metrics_to_compare:
 		print(f"\n{metric.upper()}:")
-		for model_name in results:
-			val_scores = results[model_name]['training_metrics'][metric]['val']
-			final_score = val_scores[-1]
-			best_score = max(val_scores)
-
+		for model_name, metrics in results.items():
+			val_scores = metrics['training_metrics'][metric]['val']
 			print(f"{model_name}:")
-			print(f"  Final: {final_score:.4f}")
-			print(f"  Best:  {best_score:.4f}")
+			print(f"  Final: {val_scores[-1]:.4f}")
+			print(f"  Best:  {max(val_scores):.4f}")
 			print(f"  Mean:  {np.mean(val_scores):.4f}")
 			print(f"  Std:   {np.std(val_scores):.4f}")
-	
-	# Compare test metrics
+
 	print("\nTest Metrics:")
 	for metric in metrics_to_compare:
 		print(f"\n{metric.upper()}:")
-		for model_name in results:
-			test_score = results[model_name]['test_metrics'][metric]
-			print(f"{model_name}: {test_score:.4f}")
-
+		for model_name, metrics in results.items():
+			print(f"{model_name}: {metrics['test_metrics'][metric]:.4f}")
