@@ -64,7 +64,7 @@ def init_lstm_with_attention() -> LSTMWithAttention:
 		embedding_dim=EMBEDDING_DIM,
 		hidden_dim=128,
 		output_dim=1,
-		dropout_rate=0.7
+		dropout_rate=0.4
 	)
 
 def init_lstm_without_attention() -> LSTMWithoutAttention:
