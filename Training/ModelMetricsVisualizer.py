@@ -45,7 +45,7 @@ class ModelMetricsVisualizer:
 			metric: The metric to plot (accuracy, precision, recall, or f1_score)
 			save_path: Optional path to save the plot
 		"""
-		fig, ax = plt.subplots(figsize=(8, 5))
+		fig, ax = plt.subplots(figsize=(6, 5))
 		
 		for model_name in ['Model 1', 'Model 2']:
 			epochs = range(1, len(results[model_name]['training_metrics'][metric]['val']) + 1)
