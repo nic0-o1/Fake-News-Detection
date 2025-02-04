@@ -3,7 +3,7 @@ from torch.utils.data import Dataset
 import numpy as np
 from typing import Dict
 
-class NewsDatasetLSTM(Dataset):
+class NewsDataset(Dataset):
 	"""
 	A PyTorch Dataset for converting news texts to Word2Vec embeddings for LSTM models.
 	
