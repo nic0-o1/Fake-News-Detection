@@ -81,33 +81,32 @@ class CheckpointManager:
 		Args:
 			load_type: Either 'best' or 'final'
 		"""
-		# try:
-		load_path = self.best_path if load_type == 'best' else self.final_path
-		checkpoint = torch.load(str(load_path))
-		
-		# Verify checkpoint integrity
-		required_keys = {'model_state_dict', 'epoch', 'early_stopping_state'}
-		if not all(key in checkpoint for key in required_keys):
-			raise ValueError("Checkpoint is missing required keys")
-		
-		model.load_state_dict(checkpoint['model_state_dict'])
-		optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-		
-		if scheduler and 'scheduler_state_dict' in checkpoint and checkpoint['scheduler_state_dict']:
-			scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-		
-		if self.verbose:
-			print(f"Checkpoint loaded from {load_path}")
-			print(f"Resuming from epoch {checkpoint['epoch'] + 1}")
-		
-		return (
-			checkpoint['epoch'],
-			checkpoint['metrics'],
-			checkpoint['hyperparameters'],
-			checkpoint['metadata'],
-			checkpoint['early_stopping_state']
-		)
+		try:
+			load_path = self.best_path if load_type == 'best' else self.final_path
+			checkpoint = torch.load(str(load_path))
 			
-		# except Exception as e:
-		#     print(f"Error loading {load_type} checkpoint: {str(e)}")
-		#     return -1, {}, {}, {}, {}
+			# Verify checkpoint integrity
+			required_keys = {'model_state_dict', 'epoch', 'early_stopping_state'}
+			if not all(key in checkpoint for key in required_keys):
+				raise ValueError("Checkpoint is missing required keys")
+			
+			model.load_state_dict(checkpoint['model_state_dict'])
+			optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+			
+			if scheduler and 'scheduler_state_dict' in checkpoint and checkpoint['scheduler_state_dict']:
+				scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+			
+			if self.verbose:
+				print(f"Checkpoint loaded from {load_path}")
+				print(f"Resuming from epoch {checkpoint['epoch'] + 1}")
+			
+			return (
+				checkpoint['epoch'],
+				checkpoint['metrics'],
+				checkpoint['hyperparameters'],
+				checkpoint['metadata'],
+				checkpoint['early_stopping_state']
+			)			
+		except Exception as e:
+			print(f"Error loading {load_type} checkpoint: {str(e)}")
+			return -1, {}, {}, {}, {}
