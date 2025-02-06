@@ -7,7 +7,7 @@ This project explores the use of Long Short-Term Memory (LSTM) networks combined
 ## 📌 Overview  
 
 - **Objective:** Develop an advanced fake news detection system using LSTM and attention mechanisms.  
-**Dataset:** A balanced dataset of real and fake news articles. The provided version is **preprocessed**—to obtain the raw version, remove the `full_text_processed` column.  
+**Dataset:** A balanced dataset of real and fake news articles. The provided version is **preprocessed**—to obtain the raw version, remove the `full_text` and `full_text_processed` columns.  
 - **Techniques:**  
   - Preprocessing and tokenisation of news articles  
   - LSTM-based model for sequential text analysis  
