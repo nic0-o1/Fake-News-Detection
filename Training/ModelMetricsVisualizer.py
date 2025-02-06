@@ -1,8 +1,10 @@
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-from typing import Dict, Optional
 from pathlib import Path
+from typing import Dict, Optional
+
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+
 
 class ModelMetricsVisualizer:
 	"""
@@ -23,8 +25,8 @@ class ModelMetricsVisualizer:
 		})
 		
 		self.colors = {
-			'Model 1': '#0077BB',
-			'Model 2': '#EE3377',
+			'LSTM with attention': '#0077BB',
+			'LSTM without attention': '#EE3377',
 		}
 		
 		self.line_styles = {
@@ -47,7 +49,7 @@ class ModelMetricsVisualizer:
 		"""
 		fig, ax = plt.subplots(figsize=(6, 5))
 		
-		for model_name in ['Model 1', 'Model 2']:
+		for model_name in results.keys():
 			epochs = range(1, len(results[model_name]['training_metrics'][metric]['val']) + 1)
 			train_scores = results[model_name]['training_metrics'][metric]['train']
 			val_scores = results[model_name]['training_metrics'][metric]['val']
@@ -82,16 +84,14 @@ class ModelMetricsVisualizer:
 		ax.grid(True, linestyle=':', alpha=0.3)
 		if metric == 'loss':
 			ax.legend(loc='upper right',
-					 bbox_to_anchor=(0.98, 0.98),
 					 frameon=True,
 					 fancybox=True,
 					 framealpha=0.9)
 		else:
-			ax.legend(loc='center right',
-					bbox_to_anchor=(0.98, 0.5),
-					frameon=True,
-					fancybox=True,
-					framealpha=0.9)
+			ax.legend(loc='lower left', 
+					 frameon=True, 
+					 fancybox=True, 
+					 framealpha=0.9)
 		
 		plt.title(f'{metric.replace("_", " ").title()} Comparison')
 		plt.tight_layout(pad=1.5)
@@ -113,8 +113,8 @@ class ModelMetricsVisualizer:
 		"""
 		figures = []
 	
-		for model_name, title in [('Model 1', 'LSTM with Attention'),
-								('Model 2', 'LSTM without Attention')]:
+		for model_name, title in [([*results][0], 'LSTM with Attention'),
+								([*results][1], 'LSTM without Attention')]:
 			
 			# Extract the confusion matrix
 			cm = results[model_name]['test_metrics']['confusion_matrix']
@@ -156,7 +156,7 @@ class ModelMetricsVisualizer:
 		"""
 		fig, ax = plt.subplots(figsize=(6, 5))
 		
-		for model_name in ['Model 1', 'Model 2']:
+		for model_name in results.keys():
 
 			fpr, tpr, _ = results[model_name]['test_metrics']['roc_curve']
 			roc = results[model_name]['test_metrics']["auc_roc"]
@@ -194,7 +194,7 @@ class ModelMetricsVisualizer:
 		"""
 		fig, ax = plt.subplots(figsize=(6, 5))
 		
-		for model_name in ['Model 1', 'Model 2']:
+		for model_name in results.keys():
 			precision, recall, _ = results[model_name]['test_metrics']['precision_recall_curve']
 			auc_pr = results[model_name]['test_metrics']['average_precision']
 			

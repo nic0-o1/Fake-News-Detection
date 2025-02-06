@@ -131,8 +131,8 @@ def train_evaluate_and_test_models(
 
 	# Store results
 	results = {
-		'Model 1': {'trainer': None, 'training_metrics': None, 'test_metrics': None},
-		'Model 2': {'trainer': None, 'training_metrics': None, 'test_metrics': None}
+		'LSTM with attention': {'trainer': None, 'training_metrics': None, 'test_metrics': None},
+		'LSTM without attention': {'trainer': None, 'training_metrics': None, 'test_metrics': None}
 	}
 
 	# Train Model 1
@@ -148,8 +148,8 @@ def train_evaluate_and_test_models(
 		early_stopping_patience=EARLY_STOP_PATIENCE,
 		save_name='LSTMWithAttention'
 	)
-	results['Model 1']['training_metrics'] = trainer1.train(train_loader, val_loader, epochs)
-	results['Model 1']['test_metrics'] = trainer1.test(test_loader)
+	results['LSTM with attention']['training_metrics'] = trainer1.train(train_loader, val_loader, epochs)
+	results['LSTM with attention']['test_metrics'] = trainer1.test(test_loader)
 
 	set_seeds()  # Reset seeds for consistency
 
@@ -166,8 +166,8 @@ def train_evaluate_and_test_models(
 		early_stopping_patience=EARLY_STOP_PATIENCE,
 		save_name='LSTMWithoutAttention'
 	)
-	results['Model 2']['training_metrics'] = trainer2.train(train_loader, val_loader, epochs)
-	results['Model 2']['test_metrics'] = trainer2.test(test_loader)
+	results['LSTM without attention']['training_metrics'] = trainer2.train(train_loader, val_loader, epochs)
+	results['LSTM without attention']['test_metrics'] = trainer2.test(test_loader)
 
 	save_results(results)
 	print('Model training and testing complete.')
