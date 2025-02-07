@@ -1,6 +1,5 @@
 *.pt
 *.png
-checkpoints/
 Results/
 WELFake_Dataset.tsv
 # Byte-compiled / optimized / DLL files
