@@ -8,6 +8,25 @@ from .CheckpointManager import CheckpointManager
 
 
 class UnifiedTrainer:
+	"""
+	A comprehensive trainer class for machine learning models with advanced training features.
+
+	This trainer supports:
+	- Weighted loss for imbalanced classes
+	- Learning rate scheduling
+	- Early stopping
+	- Gradient clipping
+	- Checkpoint management
+	- Detailed metrics tracking
+
+	Attributes:
+		model (nn.Module): The neural network model to be trained
+		optimizer (torch.optim.Optimizer): Optimization algorithm
+		criterion (nn.Module): Loss function, defaults to weighted BCE loss
+		device (str): Computing device (cuda/cpu)
+		checkpoint_manager (CheckpointManager): Manages model checkpoints
+		early_stopping (EarlyStoppingManager): Handles early stopping logic
+	"""
 	def __init__(
 		self,
 		model,
@@ -20,6 +39,20 @@ class UnifiedTrainer:
 		early_stopping_patience=3,
 		save_name='model_checkpoint'
 	):
+		"""
+		Initialize the UnifiedTrainer with model, optimization, and training parameters.
+
+		Args:
+			model (nn.Module): Neural network model to train
+			optimizer (torch.optim.Optimizer): Optimization algorithm
+			class_counts (tuple): Number of negative and positive class instances
+			criterion (nn.Module, optional): Custom loss function
+			scheduler (torch.optim.lr_scheduler, optional): Learning rate scheduler
+			device (str, optional): Computing device. Defaults to 'cuda'
+			grad_clip (float, optional): Gradient clipping threshold. Defaults to 1.0
+			early_stopping_patience (int, optional): Epochs to wait for improvement. Defaults to 3
+			save_name (str, optional): Base name for checkpoint files. Defaults to 'model_checkpoint'
+		"""
 		self.model = model
 		self.optimizer = optimizer
 		self.device = device
@@ -50,9 +83,24 @@ class UnifiedTrainer:
 		)
 
 	def get_lr(self):
+		"""
+		Retrieve the current learning rate.
+
+		Returns:
+			float: Current learning rate of the first parameter group
+		"""
 		return self.optimizer.param_groups[0]['lr']
 
 	def _forward_pass(self, embeddings):
+		"""
+		Perform a forward pass through the model, handling models with optional attention.
+
+		Args:
+			embeddings (torch.Tensor): Input embeddings/features
+
+		Returns:
+			torch.Tensor: Model predictions
+		"""
 		if hasattr(self.model, 'attention'):
 			predictions, _ = self.model(embeddings)
 		else:
@@ -60,11 +108,31 @@ class UnifiedTrainer:
 		return predictions
 
 	def _process_batch(self, batch):
+		"""
+		Prepare batch data for training/evaluation.
+
+		Args:
+			batch (dict): Batch containing embeddings and labels
+
+		Returns:
+			tuple: Processed embeddings and labels tensors
+		"""
 		embeddings = batch['embeddings'].to(self.device)
 		labels = batch['label'].to(self.device).unsqueeze(1)
 		return embeddings, labels
 
 	def train(self, train_loader, val_loader, epochs=10):
+		"""
+		Train the model with early stopping and periodic validation.
+
+		Args:
+			train_loader (DataLoader): Training data loader
+			val_loader (DataLoader): Validation data loader
+			epochs (int, optional): Maximum number of training epochs. Defaults to 10
+
+		Returns:
+			dict: Training metrics history
+		"""
 		early_stopped = False
 		final_val_loss = float('inf')
 		final_epoch = 0
@@ -128,6 +196,17 @@ class UnifiedTrainer:
 		return self.model_metrics.metrics_history
 
 	def _train_epoch(self, train_loader, epoch, epochs):
+		"""
+		Perform a single training epoch.
+
+		Args:
+			train_loader (DataLoader): Training data loader
+			epoch (int): Current epoch number
+			epochs (int): Total number of epochs
+
+		Returns:
+			tuple: Training loss, predictions, labels, and probability predictions
+		"""
 		self.model.train()
 		train_loss = 0
 		train_preds, train_labels = [], []
@@ -149,6 +228,16 @@ class UnifiedTrainer:
 		return train_loss, train_preds, train_labels, train_proba_preds
 
 	def _train_step(self, embeddings, labels):
+		"""
+		Perform a single training step with loss computation and parameter updates.
+
+		Args:
+			embeddings (torch.Tensor): Input feature embeddings
+			labels (torch.Tensor): Target labels
+
+		Returns:
+			tuple: Loss, probability predictions, and binary predictions
+		"""
 		self.optimizer.zero_grad()
 		predictions = self._forward_pass(embeddings)
 		loss = self.criterion(predictions, labels.float())
@@ -165,6 +254,16 @@ class UnifiedTrainer:
 		return loss, proba_preds, preds
 
 	def _handle_scheduling_and_stopping(self, val_loss, current_epoch):
+		"""
+		Handle learning rate scheduling and early stopping logic.
+
+		Args:
+			val_loss (float): Current validation loss
+			current_epoch (int): Current training epoch
+
+		Returns:
+			bool: Whether to stop training early
+		"""
 		# Handle learning rate scheduling
 		current_lr = self.get_lr()
 		if self.scheduler:
@@ -196,6 +295,15 @@ class UnifiedTrainer:
 		return should_stop
 
 	def evaluate(self, data_loader):
+		"""
+		Evaluate the model on a given data loader.
+
+		Args:
+			data_loader (DataLoader): Data loader for evaluation
+
+		Returns:
+			tuple: Evaluation loss and metrics dictionary
+		"""
 		self.model.eval()
 		epoch_loss = 0
 		all_preds, all_labels = [], []
@@ -224,10 +332,13 @@ class UnifiedTrainer:
 	def test(self, test_loader, checkpoint_type='best'):
 		"""
 		Test the model using either the best or final checkpoint.
-		
+
 		Args:
-			test_loader: DataLoader for test data
-			checkpoint_type: Either 'best' or 'final' (default: 'best')
+			test_loader (DataLoader): Data loader for testing
+			checkpoint_type (str, optional): Checkpoint to load. Defaults to 'best'
+
+		Returns:
+			dict: Test metrics including loss
 		"""
 		print(f"\nTesting with {checkpoint_type} model checkpoint...")
 		
