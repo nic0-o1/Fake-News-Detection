@@ -1,6 +1,7 @@
 # Leveraging LSTM and Attention Mechanisms for Improved Fake News Detection  
 
-**Natural Language Processing Project – University of Milan**  
+
+**Natural Language Processing Project – University of Milan (Master’s in Computer Science)**  
 
 This project explores the use of Long Short-Term Memory (LSTM) networks combined with attention mechanisms to improve the detection of fake news. By leveraging these deep learning techniques, the model can capture contextual dependencies and linguistic nuances, enhancing classification accuracy.  
 
