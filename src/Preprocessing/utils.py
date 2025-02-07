@@ -1,8 +1,3 @@
-"""
-NLTK utility functions for text processing.
-Provides functionality for NLTK setup, stopwords retrieval, and POS tag conversion.
-"""
-
 from typing import Set, Literal, Optional
 import nltk
 from nltk.corpus import stopwords, wordnet

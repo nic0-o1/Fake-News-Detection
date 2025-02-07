@@ -5,6 +5,15 @@ from typing import Optional, Tuple, Dict, Any
 
 class CheckpointManager:
 	def __init__(self, save_dir: str, save_name: str = 'Model', verbose: bool = True):
+		"""
+        Initialize CheckpointManager with configurable save directory and naming.
+        
+        Args:
+            save_dir (str): Directory to save checkpoints
+            save_name (str, optional): Base name for checkpoint files
+            verbose (bool, optional): Enable detailed logging
+        """
+
 		self.save_dir = Path(save_dir)
 		self.save_dir.mkdir(parents=True, exist_ok=True)
 		self.base_save_name = save_name
@@ -19,6 +28,17 @@ class CheckpointManager:
 		self.final_path = self.save_dir / f"{self.base_save_name}_final.pt"
 	
 	def _create_metadata(self, epoch: int, metrics: dict, hyperparameters: dict) -> dict:
+		"""
+        Generate comprehensive metadata for the checkpoint.
+        
+        Args:
+            epoch (int): Current training epoch
+            metrics (dict): Performance metrics
+            hyperparameters (dict): Training hyperparameters
+        
+        Returns:
+            dict: Metadata dictionary
+        """
 		return {
 			'timestamp': datetime.now().isoformat(),
 			'epoch': epoch,
@@ -39,11 +59,21 @@ class CheckpointManager:
 		save_type: str = 'best'
 	) -> Optional[str]:
 		"""
-		Save a checkpoint with specified type.
-		
-		Args:
-			save_type: Either 'best' or 'final'
-		"""
+        Save a checkpoint with optional components.
+        
+        Args:
+            model (torch.nn.Module): Model to save
+            optimizer (torch.optim.Optimizer): Optimizer state
+            scheduler (Optional[Any], optional): Learning rate scheduler
+            epoch (int, optional): Current epoch number
+            metrics (dict, optional): Performance metrics
+            hyperparameters (dict, optional): Training hyperparameters
+            early_stopping_state (dict, optional): Early stopping tracking state
+            save_type (str, optional): Checkpoint type ('best' or 'final')
+        
+        Returns:
+            Optional[str]: Path to saved checkpoint or None if failed
+        """
 		try:
 			checkpoint = {
 				'model_state_dict': model.state_dict(),
@@ -76,11 +106,22 @@ class CheckpointManager:
 		load_type: str = 'best'
 	) -> Tuple[int, Dict, Dict, Dict, Dict]:
 		"""
-		Load a checkpoint of specified type.
-		
-		Args:
-			load_type: Either 'best' or 'final'
-		"""
+        Load a checkpoint with error handling and flexibility.
+        
+        Args:
+            model (torch.nn.Module): Model to load state into
+            optimizer (torch.optim.Optimizer): Optimizer to restore
+            scheduler (Optional[Any], optional): Learning rate scheduler
+            load_type (str, optional): Checkpoint type to load ('best' or 'final')
+        
+        Returns:
+            Tuple containing:
+            - Epoch number
+            - Metrics
+            - Hyperparameters
+            - Metadata
+            - Early stopping state
+        """
 		try:
 			load_path = self.best_path if load_type == 'best' else self.final_path
 			checkpoint = torch.load(str(load_path))
